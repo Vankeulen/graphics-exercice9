@@ -15,7 +15,7 @@ public class Triple {
 	public final static Triple zAxis = new Triple(0, 0, 1);
 
 	// public, but absolutely do not change them directly!
-	public double x, y, z;
+	public final double x, y, z;
 
 	public Triple(double xIn, double yIn, double zIn) {
 		x = xIn;
