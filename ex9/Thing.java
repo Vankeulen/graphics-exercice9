@@ -142,11 +142,9 @@ public class Thing {
 		// Create VAO on graphics card
 		vao = GL30.glGenVertexArrays();
 		Util.error("after generate single vertex array");
-		GL30.glBindVertexArray(vao);
-		Util.error("after bind the vao");
 		
-		
-		
+		bindVao();
+		mapPositionColorArrays();
 	}
 
 	
@@ -174,6 +172,13 @@ public class Thing {
 	
 	private void bindVao() {
 		
+		GL30.glBindVertexArray(vao);
+		Util.error("after bind the vao");
+		
+	}
+		
+	private void mapPositionColorArrays() {
+		
 		// Prepare VAO to hold index 0/1
 		GL20.glEnableVertexAttribArray(0);  // position
 		Util.error("after enable attrib 0");
@@ -191,6 +196,6 @@ public class Thing {
 		Util.error("after bind color buffer");
 		GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
 		Util.error("after do color vertex attrib pointer");
-		//*/
 	}
+		
 }
