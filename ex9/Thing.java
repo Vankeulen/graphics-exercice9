@@ -113,9 +113,6 @@ public class Thing {
 		
 		System.out.println("Have buffers");
 		
-		// Reset positions.
-		pBuffer.rewind();
-		cBuffer.rewind();
 		for (int i = 0; i < numTris * 3; i++) {
 			modelPositions.get(i).sendData(pBuffer);
 			modelColors.get(i).sendData(cBuffer);
