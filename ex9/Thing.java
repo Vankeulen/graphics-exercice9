@@ -92,6 +92,11 @@ public class Thing {
 		rotSpeed = 0;
 	}
 	
+	public void update() {
+		
+		
+	}
+	
 	public int size() { return numTris; }
 	
 	private FloatBuffer makeBuffer() {
@@ -122,7 +127,6 @@ public class Thing {
 		}
 		pBuffer.rewind();
 		cBuffer.rewind();
-		
 		// Set position as 'Dynamic Draw' since we won't update it
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, pHandle);
 		Util.error("after bind pHandle");
@@ -141,6 +145,35 @@ public class Thing {
 		GL30.glBindVertexArray(vao);
 		Util.error("after bind the vao");
 		
+		
+		
+	}
+
+	
+	public Mat4 getTRS() {
+		return Mat4.trs(position, rotation, scale);
+	}
+	
+	public Triple getColor() {
+		return color;
+	}
+	
+	public void draw() {
+		// Activate model data
+		Util.error("after bind vao");
+		
+		bindVao();
+		
+		// Draw data
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numTris * 3);
+		Util.error("after draw arrays");
+		
+		
+	}
+	
+	
+	private void bindVao() {
+		
 		// Prepare VAO to hold index 0/1
 		GL20.glEnableVertexAttribArray(0);  // position
 		Util.error("after enable attrib 0");
@@ -158,30 +191,6 @@ public class Thing {
 		Util.error("after bind color buffer");
 		GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
 		Util.error("after do color vertex attrib pointer");
-		
-		
-	}
-	
-	public void update() {
-		
-	}
-	
-	public Mat4 getTRS() {
-		return Mat4.trs(position, rotation, scale);
-	}
-	
-	public Triple getColor() {
-		return color;
-	}
-	
-	public void draw() {
-		// Activate model data
-		Util.error("after bind vao");
-		
-		// Draw data
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numTris * 3);
-		Util.error("after draw arrays");
-		
-		
+		//*/
 	}
 }

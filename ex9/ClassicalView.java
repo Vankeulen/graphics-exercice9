@@ -277,6 +277,8 @@ public class ClassicalView extends Basic {
 		}
 		
 		niceCameraControls();
+		
+		
 						
 		camera.move();
 		
@@ -351,7 +353,7 @@ public class ClassicalView extends Basic {
 	private void draw(Thing thing) {
 		Mat4 trs = thing.getTRS();
 		Triple color = thing.getColor();
-		thing.sendData();
+		
 		trs.sendData(modelViewBuffer);
 		GL20.glUniformMatrix4fv(modelViewLoc, true, modelViewBuffer);
 		GL20.glUniform4f(blendColorLoc, (float)color.x, (float)color.y, (float)color.z, 1f);
