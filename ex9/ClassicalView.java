@@ -29,16 +29,17 @@ public class ClassicalView extends Basic {
 		app.start();
 	}// main
 
-	// instance variables 
+	// toggle to preserve Jerry's controls.
 	public static final boolean JERRY_CONTROLS = false;
+	
+	// instance variables 
 	private Shader v1, f1;
 	private int hp1;  // handle for the GLSL program
 	private int blendColorLoc;
 
-	private int frustumLoc, lookAtLoc, modelViewLoc;
-	private FloatBuffer frustumBuffer, lookAtBuffer, modelViewBuffer;
+	private int frustumLoc, lookAtLoc, modelLoc;
+	private FloatBuffer frustumBuffer, lookAtBuffer, modelBuffer;
 
-	// private TriList tris;
 	// Need to store at least 256 states... might as well 2x it
 	// ints are 32 bits... this type stores massive bitmasks
 	private IntFlags keyStates = new IntFlags(512 / 32);
@@ -47,9 +48,13 @@ public class ClassicalView extends Basic {
 	private int mouseX, mouseY;
 	private int lastMouseX, lastMouseY;
 	
+	/** Entity list */
 	private List<Thing> things;
+	/** Time (seconds) between last frame and new frame */
 	private double deltaTime;
+	/** Last Time (seconds) */
 	private double lastTime;
+	/** Current Time (seconds) */
 	private double time;
 
 	private Camera camera;
@@ -61,8 +66,7 @@ public class ClassicalView extends Basic {
 	public ClassicalView(String appTitle, int pw, int ph, int fps, String inputFile) {
 		super(appTitle, pw, ph, (long) ((1.0 / fps) * 1000000000));
 		
-		// read position and color data for all the triangles from inputFile:
-		// tris = new TriList();
+		// Read "things" from input file.
 		try {
 			System.out.println("Loading input file " + inputFile);
 			Scanner input = new Scanner(new File(inputFile));
@@ -83,20 +87,24 @@ public class ClassicalView extends Basic {
 			System.exit(1);
 		}
 
-		// place camera somewhere at start
+		// Primary camera
 		double w = .5;
 		camera = new Camera(-w, w, -w, w, 0.5, 1300,
-				new Triple(0, -0, 5), 90, -30);
+				new Triple(0, 0, 5), 90, -30);
 		
 		w = 1.5;
+		// Secondary camera, wider view, from above.
 		topCamera = new Camera(-w, w, -w, w, 0.5, 1300,
-				new Triple(0, -0, 50), 0, -89);
+				new Triple(0, 0, 100), 0, Camera.MIN_PITCH);
 		
-		modelViewBuffer = Util.createFloatBuffer(16);
 
 	}
 	
+	/** Prepares locations for data on the graphics card, and sets up various data. */
 	protected void init() {
+		// Shader code, typically loaded from a file.
+		// This is the vertex shader, which applies the MVP matrix:
+		//		Model View Projection
 		String vertexShaderCode
 				= "#version 330 core\n"
 				+ "layout (location = 0 ) in vec3 vertexPosition;\n"
@@ -104,17 +112,16 @@ public class ClassicalView extends Basic {
 				+ "out vec3 color;\n"
 				+ "uniform mat4 frustum;\n"
 				+ "uniform mat4 lookAt;\n"
-				+ "uniform mat4 modelView;\n"
+				+ "uniform mat4 model;\n"
 				+ "void main(void)\n"
 				+ "{\n"
 				+ "  color = vertexColor;\n"
-				+ "  gl_Position = frustum * lookAt * modelView * vec4( vertexPosition, 1.0 );\n"
+				+ "  gl_Position = frustum * lookAt * model * vec4( vertexPosition, 1.0 );\n"
 				+ "}\n";
-
-		System.out.println("Vertex shader:\n" + vertexShaderCode + "\n\n");
-
+		
 		v1 = new Shader("vertex", vertexShaderCode);
 
+		// This is the fragment shader, used to actually render the pixels on the screen
 		String fragmentShaderCode
 				= "#version 330 core\n"
 				+ "in vec3 color;\n"
@@ -125,61 +132,73 @@ public class ClassicalView extends Basic {
 				+ "  fragColor = blendColor * vec4(color, 1.0 );\n"
 				+ "}\n";
 
-		System.out.println("Fragment shader:\n" + fragmentShaderCode + "\n\n");
-
 		f1 = new Shader("fragment", fragmentShaderCode);
-
+		
+		// Create shader program
 		hp1 = GL20.glCreateProgram();
 		Util.error("after create program");
 		System.out.println("program handle is " + hp1);
 
+		// Attach shader vert/frag shaders together 
 		GL20.glAttachShader(hp1, v1.getHandle());
 		Util.error("after attach vertex shader to program");
-
 		GL20.glAttachShader(hp1, f1.getHandle());
 		Util.error("after attach fragment shader to program");
-
 		GL20.glLinkProgram(hp1);
 		Util.error("after link program");
 
+		// Activate shader program, 
+		//		we're not using any others, 
+		//		so it will stay active for the rest of the program
 		GL20.glUseProgram(hp1);
 		Util.error("after use program");
 
-		// get location of uniforms 
+		// get location of uniform properties in shader
 		frustumLoc = GL20.glGetUniformLocation(hp1, "frustum");
 		lookAtLoc = GL20.glGetUniformLocation(hp1, "lookAt");
-		modelViewLoc = GL20.glGetUniformLocation(hp1, "modelView");
+		modelLoc = GL20.glGetUniformLocation(hp1, "model");
 		blendColorLoc = GL20.glGetUniformLocation(hp1, "blendColor");
-		Mat4.IDENTITY.sendData(modelViewBuffer);
-		GL20.glUniformMatrix4fv(modelViewLoc, true, modelViewBuffer);
+		
+		// The above pointers let us pipe data into the shader program.
+		// For example, prepare the model matrix with the identity matrix
+		// To do this, we need a buffer...
+		modelBuffer = Util.createFloatBuffer(16);
+		// ...then put the data into it...
+		Mat4.IDENTITY.sendData(modelBuffer);
+		// ...and then attach it to the uniform.
+		GL20.glUniformMatrix4fv(modelLoc, true, modelBuffer);
+		
+		// We can also send data directly for uniforms we know the size of
+		// for example, we set blendColor to be a vec4, so it can be set 
+		//		directly with 4 floats. (1,1,1,1) = White, Opaque
 		GL20.glUniform4f(blendColorLoc, 1,1,1,1);
 		
-		System.out.println("locations of frustum and lookAt and modelview uniforms are: "
-				+ frustumLoc + " " + lookAtLoc + " " + modelViewLoc);
+		// Print out pointers because why not.
+		System.out.println("locations of frustum and lookAt and model uniforms are: "
+				+ frustumLoc + " " + lookAtLoc + " " + modelLoc);
 
-		// once and for all (it's never changing), get
-		// buffer for frustum
-		frustumBuffer = camera.getFrustumBuffer();
-		// Util.showBuffer("frustum from camera: ", frustumBuffer );
-
-		// set background color to something a bit more artsy fartsy
-		GL11.glClearColor(.08f, .4f, .55f, 1);
-
-		// turn on depth testing
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		// clearing the depth buffer means setting all spots to this value (1)
+		// Set clear color/depth
+		//		these are used every frame to reset rendering buffers.
+		// Set background color to something more pleasant than pure white.
+		GL11.glClearColor(.08f, .4f, .65f, 1);
+		// Set the default depth value to use when clearing
 		GL11.glClearDepth(2.0f);
+
+		// Turn on depth testing
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		// an incoming fragment overwrites the existing fragment if its depth
-		// is less
+		//		is less (closer to the camera)
 		GL11.glDepthFunc(GL11.GL_LESS);
 		
-		
+		// Finally, pipe all data from all entities
+		// (only needs to be done once, not every frame)
 		for (Thing thing : things) {
 			thing.sendData();
 		}
 
 	}
 
+	/** Handle moving to the next frame of input */
 	protected void nextFrame() {
 		// begin next frame.
 		keyStates.next();
@@ -188,17 +207,19 @@ public class ClassicalView extends Basic {
 		lastMouseY = mouseY;
 		
 		lastTime = time;
-		time = getTime();
-		deltaTime = (time - lastTime) / 1000.0;
+		time = getTime() / 1000.0;
+		deltaTime = (time - lastTime);
 	}
 		
+	/** Called by Basic every frame before update */
 	protected void processInputs() {
 		nextFrame();
 		
 		// process all waiting input events
 		while (InputInfo.size() > 0) {
 			InputInfo info = InputInfo.get();
-				
+			
+			// Jerry's controls.
 			if (JERRY_CONTROLS) {
 				if (info.kind == 'k' && (info.action == GLFW_PRESS
 						|| info.action == GLFW_REPEAT)) {
@@ -269,6 +290,7 @@ public class ClassicalView extends Basic {
 		
 	}
 
+	/** Called by Basic every frame */
 	protected void update() {
 		
 		if (keyStates.checkPressed(GLFW_KEY_ESCAPE)) {
@@ -277,92 +299,88 @@ public class ClassicalView extends Basic {
 		}
 		
 		niceCameraControls();
-		
-		
 						
 		camera.move();
 		
 	}
 		
-
+	/** Called by Basic at the end of every frame to render the image */
 	protected void display() {
-		
-		// System.out.println( "Step: " + getStepNumber() + " camera: " + camera );
-
-		// System.out.println("camera is now " + camera);
-
-		// send triangle data to GPU
-		
-		// tris.sendData();
-		// send possibly new values of frustum and lookAt to GPU
-		// Util.showBuffer("frustum: ", frustumBuffer );
-		activate(camera);
-		//rainbowBlendColor();
-		
-		// clear the color and depth buffers
+		// Clear screen (backbuffer)
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-
-		// activate vao
-		// GL30.glBindVertexArray(tris.getVAO());
-		// Util.error("after bind vao");
-
-		// seems that if glViewport is not called, Mac retina display
-		// is taken care of, but calling glViewport requires adjusting
-		// by doubling number of pixels
+		
+		// Pipes data for View/Projection matrix for camera to shader
+		activate(camera);
+		
+		// Sets up view on left half of screen
 		GL11.glViewport(0, 0,
 				(int)(Util.retinaDisplay * getPixelWidth() * .5) ,
 				Util.retinaDisplay * getPixelHeight());
 
-		// draw the buffers
+		// Draws all objects
 		for (Thing thing : things) {
 			draw(thing);
 		}
 		
-		//GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
-		// Util.error("after draw arrays");
+		// Pipes data for View/Projection matrix for other camera to shader
 		activate(topCamera);
+		
+		// Sets up view on right half of screen
 		GL11.glViewport((int)(Util.retinaDisplay * getPixelWidth() * .5), 0,
 				(int)(Util.retinaDisplay * getPixelWidth() * .5),
 				Util.retinaDisplay * getPixelHeight());
 				
-		
-		// GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
-			
+		// Draws all objects again in the other view
 		for (Thing thing : things) {
 			draw(thing);
 		}
 	}
 
 	private void rainbowBlendColor() {
-		double time = getStepNumber() * .1;
-		float s1 = .5f + .5f * (float)Math.sin(time + 0.0 * Math.PI / 2.0);
-		float s2 = .5f + .5f * (float)Math.sin(time + 1.0 * Math.PI / 2.0);
-		float s3 = .5f + .5f * (float)Math.sin(time + 2.0 * Math.PI / 2.0);
+		double t = time * 3.3;
+		// Silly method used to test the blendColor shader property.
+		float s1 = .5f + .5f * (float)Math.sin(t + 0.0 * Math.PI / 2.0);
+		float s2 = .5f + .5f * (float)Math.sin(t + 1.0 * Math.PI / 2.0);
+		float s3 = .5f + .5f * (float)Math.sin(t + 2.0 * Math.PI / 2.0);
 		GL20.glUniform4f(blendColorLoc, s1, s2, s3, 1);
 	}
 	
+	/** Activates the camera by piping the camera's view and projection matrix 
+	 into the relevant buffers and shader properties */
 	private void activate(Camera camera) {
 		
+		// Get the buffers for the camera...
 		frustumBuffer = camera.getFrustumBuffer();
-		GL20.glUniformMatrix4fv(frustumLoc, true, frustumBuffer);
 		lookAtBuffer = camera.getLookAtBuffer();
+		
+		// ...then attach them to the shader properites
+		GL20.glUniformMatrix4fv(frustumLoc, true, frustumBuffer);
 		GL20.glUniformMatrix4fv(lookAtLoc, true, lookAtBuffer);
 		
 	}
-
+	
+	/** Draws the Thing */
 	private void draw(Thing thing) {
+		// Get Tranlate Rotate Scale (modelView property) matrix
 		Mat4 trs = thing.getTRS();
+		// Get blendColor property
 		Triple color = thing.getColor();
 		
-		trs.sendData(modelViewBuffer);
-		GL20.glUniformMatrix4fv(modelViewLoc, true, modelViewBuffer);
+		// Update the modelView property to use the thing's modelView
+		trs.sendData(modelBuffer);
+		GL20.glUniformMatrix4fv(modelLoc, true, modelBuffer);
+		// Update the blendColor property
 		GL20.glUniform4f(blendColorLoc, (float)color.x, (float)color.y, (float)color.z, 1f);
+		
+		// rainbowBlendColor();
+		
 		thing.draw();
 	}
 	
+	/** Nicer, more intuitive camera controls */
 	private void niceCameraControls() {
 		
-		final double angAmount = 5;
+		// Mousemove while rightclick held
 		if (mouseButtons.check(GLFW_MOUSE_BUTTON_2)) {
 			if (mouseX != lastMouseX) {
 				camera.rotate(lastMouseX - mouseX);
@@ -372,7 +390,8 @@ public class ClassicalView extends Basic {
 			}
 		}
 		
-		
+		// Map W/S to forward/back, A/D to left/right, Q/E to down/up
+		// Movement applied every frame keys are held...
 		int dx=0,dy=0,dz=0;
 		if (keyStates.check(GLFW_KEY_W)) { dy += 1; } 
 		if (keyStates.check(GLFW_KEY_S)) { dy -= 1; } 
@@ -380,21 +399,22 @@ public class ClassicalView extends Basic {
 		if (keyStates.check(GLFW_KEY_D)) { dx += 1; } 
 		if (keyStates.check(GLFW_KEY_Q)) { dz -= 1; }
 		if (keyStates.check(GLFW_KEY_E)) { dz += 1; }
+		
+		// Move at 30 units/second
 		double speed = 30 * deltaTime;
+		// And apply movement relative to camera facing
 		camera.moveRelative(new Triple(dx*speed,dy*speed,dz*speed));
 		
-		if (keyStates.check(GLFW_KEY_J)) {
-			camera.rotate(angAmount);
-		} 
-		if (keyStates.check(GLFW_KEY_L)) {
-			camera.rotate(-angAmount);
-		}
-		if (keyStates.check(GLFW_KEY_I)) {
-			camera.tilt(angAmount);
-		} 
-		if (keyStates.check(GLFW_KEY_K)) {
-			camera.tilt(-angAmount);
-		}
+		dx = dy = dz = 0;
+		// Rotation applied every frame keys are held...
+		if (keyStates.check(GLFW_KEY_J)) { dx += 1; }
+		if (keyStates.check(GLFW_KEY_L)) { dx -= 1; }
+		if (keyStates.check(GLFW_KEY_I)) { dy += 1; }
+		if (keyStates.check(GLFW_KEY_K)) { dy -= 1; }
+		// Rotate at 65 degrees/second
+		double angAmount = 65 * deltaTime;
+		camera.rotate(dx * angAmount);
+		camera.tilt(dy * angAmount);
 	}
 
 }// ClassicalView

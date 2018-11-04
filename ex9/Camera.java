@@ -10,9 +10,13 @@ import java.nio.FloatBuffer;
 
 public class Camera {
 
+	public static final double MAX_PITCH =  89.999;
+	public static final double MIN_PITCH = -89.999;
+	
 	// human modeling of viewing setup
 	private Triple e;
 	private double azi, alt;
+	
 
 	// frustum data
 	private double l, r, b, t, n, f;
@@ -133,11 +137,11 @@ public class Camera {
 
 		update();
 	}
-
+	
 	public void tilt(double amount) {
 		alt += amount;
-		if (alt < -89) { alt = -89; }
-		if (alt > 89) { alt = 89; }
+		if (alt < MIN_PITCH) { alt = MIN_PITCH; }
+		if (alt > MAX_PITCH) { alt = MAX_PITCH; }
 
 		update();
 	}
