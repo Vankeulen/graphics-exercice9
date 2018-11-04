@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 /*  
    classical viewing of some
@@ -25,7 +25,7 @@ import java.util.List;
 public class ClassicalView extends Basic {
 
 	public static void main(String[] args) {
-		ClassicalView app = new ClassicalView("Classic Viewing of Several Triangles", 1000, 500, 30, "src/classic/carworld.txt");
+		ClassicalView app = new ClassicalView("Classic Viewing of Several Triangles", 1000, 500, 30, "src/ex9/carworld.txt");
 		app.start();
 	}// main
 

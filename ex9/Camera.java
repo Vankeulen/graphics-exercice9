@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 /*
    holds the viewing data and

@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 import java.util.Scanner;
 import java.nio.FloatBuffer;

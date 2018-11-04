@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 /*  
   an instance of this class provides interface to

@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 /*  
   draw many triangles from a data file

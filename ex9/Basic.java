@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 /*  this class should be extended to provide
     an event-driven, graphical application

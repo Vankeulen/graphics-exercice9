@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 /*  4 by 4 matrices
  */

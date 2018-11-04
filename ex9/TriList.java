@@ -1,4 +1,4 @@
-package classic;
+package ex9;
 
 /* 
   hold the data for a
