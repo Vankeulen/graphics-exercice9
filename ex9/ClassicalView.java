@@ -33,11 +33,19 @@ public class ClassicalView extends Basic {
 	public static final boolean JERRY_CONTROLS = false;
 	private Shader v1, f1;
 	private int hp1;  // handle for the GLSL program
+	private int blendColorLoc;
 
 	private int frustumLoc, lookAtLoc, modelViewLoc;
 	private FloatBuffer frustumBuffer, lookAtBuffer, modelViewBuffer;
 
 	// private TriList tris;
+	// Need to store at least 256 states... might as well 2x it
+	// ints are 32 bits... this type stores massive bitmasks
+	private IntFlags keyStates = new IntFlags(512 / 32);
+	// Kinda silly, but works.
+	private IntFlags mouseButtons = new IntFlags(2);
+	private int mouseX, mouseY;
+	private int lastMouseX, lastMouseY;
 	
 	private List<Thing> things;
 
@@ -108,9 +116,10 @@ public class ClassicalView extends Basic {
 				= "#version 330 core\n"
 				+ "in vec3 color;\n"
 				+ "layout (location = 0 ) out vec4 fragColor;\n"
+				+ "uniform vec4 blendColor;\n"
 				+ "void main(void)\n"
 				+ "{\n"
-				+ "  fragColor = vec4(color, 1.0 );\n"
+				+ "  fragColor = blendColor * vec4(color, 1.0 );\n"
 				+ "}\n";
 
 		System.out.println("Fragment shader:\n" + fragmentShaderCode + "\n\n");
@@ -137,8 +146,10 @@ public class ClassicalView extends Basic {
 		frustumLoc = GL20.glGetUniformLocation(hp1, "frustum");
 		lookAtLoc = GL20.glGetUniformLocation(hp1, "lookAt");
 		modelViewLoc = GL20.glGetUniformLocation(hp1, "modelView");
+		blendColorLoc = GL20.glGetUniformLocation(hp1, "blendColor");
 		Mat4.IDENTITY.sendData(modelViewBuffer);
 		GL20.glUniformMatrix4fv(modelViewLoc, true, modelViewBuffer);
+		GL20.glUniform4f(blendColorLoc, 1,1,1,1);
 		
 		System.out.println("locations of frustum and lookAt and modelview uniforms are: "
 				+ frustumLoc + " " + lookAtLoc + " " + modelViewLoc);
@@ -148,8 +159,8 @@ public class ClassicalView extends Basic {
 		frustumBuffer = camera.getFrustumBuffer();
 		// Util.showBuffer("frustum from camera: ", frustumBuffer );
 
-		// set background color to white
-		GL11.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+		// set background color to something a bit more artsy fartsy
+		GL11.glClearColor(.08f, .4f, .55f, 1);
 
 		// turn on depth testing
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -167,22 +178,27 @@ public class ClassicalView extends Basic {
 	}
 
 	protected void processInputs() {
+		// begin next frame.
+		keyStates.next();
+		mouseButtons.next();
+		lastMouseX = mouseX;
+		lastMouseY = mouseY;
+		
+		
 		// process all waiting input events
-
 		while (InputInfo.size() > 0) {
 			InputInfo info = InputInfo.get();
-
-			if (info.kind == 'k' && (info.action == GLFW_PRESS
-					|| info.action == GLFW_REPEAT)) {
-
-				// store info values in more convenient variables
-				int code = info.code;
-				int mods = info.mods;
-
-				final double amount = 1;  // amount to move
-				final double angAmount = 5;
 				
-				if (JERRY_CONTROLS) {
+			if (JERRY_CONTROLS) {
+				if (info.kind == 'k' && (info.action == GLFW_PRESS
+						|| info.action == GLFW_REPEAT)) {
+
+					// store info values in more convenient variables
+					int code = info.code;
+					int mods = info.mods;
+
+					final double amount = 1;  // amount to move
+					final double angAmount = 5;
 
 					// move the eye point of the camera
 					if (code == GLFW_KEY_X && mods == 0) {// x:  move left
@@ -213,48 +229,85 @@ public class ClassicalView extends Basic {
 					} else {
 						// ignore bad keys
 					}
-					
-				} else {
-					
-					if (code == GLFW_KEY_W) {
-						camera.moveRelative(new Triple(0,1,0));
-					} else if (code == GLFW_KEY_S) {
-						camera.moveRelative(new Triple(0,-1,0));
-					} else if (code == GLFW_KEY_A) {
-						camera.moveRelative(new Triple(-1,0,0));
-					} else if (code == GLFW_KEY_D) {
-						camera.moveRelative(new Triple(1,0,0));
-					} else if (code == GLFW_KEY_Q) {
-						camera.moveRelative(new Triple(0,0,-1));
-					} else if (code == GLFW_KEY_E) {
-						camera.moveRelative(new Triple(0,0,1));
-					} else if (code == GLFW_KEY_J) {
-						camera.rotate(angAmount);
-					} else if (code == GLFW_KEY_L) {
-						camera.rotate(-angAmount);
-					} else if (code == GLFW_KEY_I) {
-						camera.tilt(angAmount);
-					} else if (code == GLFW_KEY_K) {
-						camera.tilt(-angAmount);
-					}
-						
-					
+				}// input event is a key
+				else if (info.kind == 'm') {// mouse moved
+					//  System.out.println( info );
+				} else if (info.kind == 'b') {// button action
+					//  System.out.println( info );
 				}
-			}// input event is a key
-			else if (info.kind == 'm') {// mouse moved
-				//  System.out.println( info );
-			} else if (info.kind == 'b') {// button action
-				//  System.out.println( info );
+			} else {
+				
+				if (info.kind == 'k' && info.action == GLFW_PRESS) {
+					keyStates.set(info.code, true);
+				} else if (info.kind == 'k' && info.action == GLFW_RELEASE) {
+					keyStates.set(info.code, false);
+				} else if (info.kind == 'm') {
+					mouseX = info.mouseX;
+					mouseY = info.mouseY;
+					
+				} else if (info.kind == 'b' && info.action == GLFW_PRESS) {
+					mouseButtons.set(info.code, true);
+				} else if (info.kind == 'b' && info.action == GLFW_RELEASE) {
+					mouseButtons.set(info.code, false);
+				}
+					
 			}
-
+		
+			
 		}// loop to process all input events
-
+		
+		
 	}
 
 	protected void update() {
 		
+		final double angAmount = 5;
+		if (mouseButtons.check(GLFW_MOUSE_BUTTON_2)) {
+			if (mouseX != lastMouseX) {
+				camera.rotate(lastMouseX - mouseX);
+			}
+			if (mouseY != lastMouseY) {
+				camera.tilt(lastMouseY - mouseY);
+			}
+		}
+		
+		if (keyStates.checkPressed(GLFW_KEY_ESCAPE)) {
+			glfwSetWindowShouldClose(window, true);
+		}
+		if (keyStates.check(GLFW_KEY_W)) {
+			camera.moveRelative(new Triple(0,1,0));
+		} 
+		if (keyStates.check(GLFW_KEY_S)) {
+			camera.moveRelative(new Triple(0,-1,0));
+		} 
+		if (keyStates.check(GLFW_KEY_A)) {
+			camera.moveRelative(new Triple(-1,0,0));
+		} 
+		if (keyStates.check(GLFW_KEY_D)) {
+			camera.moveRelative(new Triple(1,0,0));
+		} 
+		if (keyStates.check(GLFW_KEY_Q)) {
+			camera.moveRelative(new Triple(0,0,-1));
+		} 
+		if (keyStates.check(GLFW_KEY_E)) {
+			camera.moveRelative(new Triple(0,0,1));
+		} 
+		if (keyStates.check(GLFW_KEY_J)) {
+			camera.rotate(angAmount);
+		} 
+		if (keyStates.check(GLFW_KEY_L)) {
+			camera.rotate(-angAmount);
+		}
+		if (keyStates.check(GLFW_KEY_I)) {
+			camera.tilt(angAmount);
+		} 
+		if (keyStates.check(GLFW_KEY_K)) {
+			camera.tilt(-angAmount);
+		}
+						
 		camera.move();
-
+		
+		
 	}
 
 	protected void display() {
@@ -269,7 +322,8 @@ public class ClassicalView extends Basic {
 		// send possibly new values of frustum and lookAt to GPU
 		// Util.showBuffer("frustum: ", frustumBuffer );
 		activate(camera);
-
+		//rainbowBlendColor();
+		
 		// clear the color and depth buffers
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
@@ -302,6 +356,14 @@ public class ClassicalView extends Basic {
 		for (Thing thing : things) {
 			draw(thing);
 		}
+	}
+
+	private void rainbowBlendColor() {
+		double time = getStepNumber() * .1;
+		float s1 = .5f + .5f * (float)Math.sin(time + 0.0 * Math.PI / 2.0);
+		float s2 = .5f + .5f * (float)Math.sin(time + 1.0 * Math.PI / 2.0);
+		float s3 = .5f + .5f * (float)Math.sin(time + 2.0 * Math.PI / 2.0);
+		GL20.glUniform4f(blendColorLoc, s1, s2, s3, 1);
 	}
 	
 	private void activate(Camera camera) {

@@ -44,7 +44,8 @@ public class Basic {
 	private GLFWMouseButtonCallback mouseButtonCallback;
 
 	// The window handle
-	private long window;
+	
+	protected long window;
 
 	private String title;
 	private int width, height; // in pixel units

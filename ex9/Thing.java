@@ -108,12 +108,9 @@ public class Thing {
 		pHandle = GL15.glGenBuffers();
 		cHandle = GL15.glGenBuffers();
 		
-		System.out.printf("%s has handles %d, %d\n", kind, pHandle, cHandle);
-		
 		pBuffer = makeBuffer();
 		cBuffer = makeBuffer();
 		
-		System.out.println("Have buffers");
 		
 		for (int i = 0; i < numTris * 3; i++) {
 			modelPositions.get(i).sendData(pBuffer);
@@ -121,7 +118,6 @@ public class Thing {
 		}
 		pBuffer.rewind();
 		cBuffer.rewind();
-		System.out.println("Piped " + numTris * 3 + " verts");
 		
 		// Set position as 'Dynamic Draw' since we won't update it
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, pHandle);
