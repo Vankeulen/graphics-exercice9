@@ -70,6 +70,14 @@ public class Triple {
 	public Triple cross(Triple v) {
 		return new Triple(y * v.z - v.y * z, v.x * z - x * v.z, x * v.y - v.x * y);
 	}
+	
+	public Triple scale(double s) {
+		return new Triple(x*s, y*s, z*s);
+	}
+	
+	public Triple scale(double xs, double ys, double zs) {
+		return new Triple(x*xs, y*ys, z*zs);
+	}
 
 	// send this Triple's data to a buffer
 	public void sendData(FloatBuffer buffer) {

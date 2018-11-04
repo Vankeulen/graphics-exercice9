@@ -16,7 +16,7 @@ public class Camera {
 
 	// frustum data
 	private double l, r, b, t, n, f;
-	private Mat4 frustum, lookAt;
+	private Mat4 frustum, orientation;
 
 	private FloatBuffer fBuff, lBuff;
 
@@ -43,6 +43,32 @@ public class Camera {
 
 		update();
 	}
+	
+	public void moveRelative(Triple movement) {
+		double alpha = Math.toRadians(azi); // yaw
+		double beta = Math.toRadians(alt); // pitch
+		Triple c = new Triple(e.x + Math.cos(beta) * n * Math.cos(alpha),
+				e.y + Math.cos(beta) * n * Math.sin(alpha),
+				e.z + n * Math.sin(beta)
+		);
+		
+		// x = right/left
+		// y = forward/backward????
+		// z = up/down??????
+		
+		orientation = Mat4.lookAtOrientation(e, c, Triple.zAxis);
+		Triple forward = orientation.forward().normalize().scale(movement.y);
+		Triple right = orientation.right().normalize().scale(movement.x);
+		Triple up  = orientation.up().normalize().scale(movement.z);
+		
+		e = new Triple(
+			e.x + forward.x + right.x + up.x,
+			e.y + forward.y + right.y + up.y,
+			e.z + forward.z + right.z + up.z
+		);
+		
+		
+	}
 
 	// from core data update frustum and lookAt
 	public void update() {
@@ -55,13 +81,13 @@ public class Camera {
 				e.z + n * Math.sin(beta)
 		);
 
-		lookAt = Mat4.lookAt(e, c, Triple.zAxis);
+		orientation = Mat4.lookAt(e, c, Triple.zAxis);
 
 		frustum = Mat4.frustum(l, r, b, t, n, f);
 
 		// fill buffers
 		frustum.sendData(fBuff);
-		lookAt.sendData(lBuff);
+		orientation.sendData(lBuff);
 
 	}
 

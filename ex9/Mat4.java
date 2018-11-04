@@ -6,8 +6,13 @@ import java.nio.FloatBuffer;
 
 public class Mat4 {
 
+	public static final Mat4 IDENTITY = new Mat4(1,0,0,0,
+												0,1,0,0,
+												0,0,1,0,
+												0,0,0,1);
+	
 	private double[][] data;
-
+	
 	public Mat4(double a11, double a12, double a13, double a14,
 			double a21, double a22, double a23, double a24,
 			double a31, double a32, double a33, double a34,
@@ -64,16 +69,70 @@ public class Mat4 {
 
 		Mat4 look = rotate.mult(translate);
 
-		System.out.println("look at matrix is \n" + look);
+		//System.out.println("look at matrix is \n" + look);
 
-		System.out.println(" lookAt * e = " + look.multAndPerspDiv(e));
-		System.out.println(" lookAt * c = " + look.multAndPerspDiv(c));
-
+		//System.out.println(" lookAt * e = " + look.multAndPerspDiv(e));
+		//System.out.println(" lookAt * c = " + look.multAndPerspDiv(c));
+		/*
 		System.out.println("Rn = " + rotate.multAndPerspDiv(n)
 				+ "Rr = " + rotate.multAndPerspDiv(r)
 				+ "Rw = " + rotate.multAndPerspDiv(w));
-
+			//*/
+		
 		return look;
+	}
+	// given eyepoint e, look at point c, and up direction,
+	// form just the orientation matrix
+	public static Mat4 lookAtOrientation (Triple e, Triple c, Triple up) {
+		Triple n = c.minus(e).normalize();
+		Triple r = n.cross(up).normalize();
+		Triple w = r.cross(n);  // note: ||r X n || = 
+		//        |sin(angle between)| ||r|| || n||
+
+		Mat4 rotate = new Mat4(r.x, r.y, r.z, 0,
+				w.x, w.y, w.z, 0,
+				-n.x, -n.y, -n.z, 0,
+				0, 0, 0, 1);
+		return rotate;
+	}
+	
+	
+	
+	// orientation matrix 'n' row should be backward direction
+	public Triple forward() { return new Triple(-data[2][0], -data[2][1], -data[2][2]); }
+	// orientation matrix 'w' row should be upward direction
+	public Triple up() { return new Triple(data[1][0], data[1][1], data[1][2]); }
+	// orientation matrix 'r' row should be rightward direction
+	public Triple right() { return new Triple(data[0][0], data[0][1], data[0][2]); }
+	
+	public static Mat4 trs(Triple tr, Triple rot, Triple sc) {
+		Mat4 t = translate(tr.x, tr.y, tr.z);
+		Mat4 rx = rotate(1, 0, 0, rot.x);
+		Mat4 ry = rotate(0, 1, 0, rot.y);
+		Mat4 rz = rotate(0, 0, 1, rot.z);
+		Mat4 s = scale(sc.x, sc.y, sc.z);
+		
+		Mat4 trs = s;
+		trs = trs.mult(rz);
+		trs = trs.mult(ry);
+		trs = trs.mult(rx);
+		trs = trs.mult(t);
+		
+		return trs;
+	}
+	
+	public static Mat4 translate(double x, double y, double z) {
+		return new Mat4(1, 0, 0, x,
+						0, 1, 0, y, 
+						0, 0, 1, z,
+						0, 0, 0, 1);
+	}
+	
+	public static Mat4 scale(double x, double y, double z) {
+		return new Mat4(x, 0, 0, 0,
+						0, y, 0, 0,
+						0, 0, z, 0,
+						0, 0, 0, 1);
 	}
 
 	// produce the general rotation matrix for
@@ -142,7 +201,7 @@ public class Mat4 {
 		double z = data[2][0] * v.x + data[2][1] * v.y + data[2][2] * v.z + data[2][3];
 		double w = data[3][0] * v.x + data[3][1] * v.y + data[3][2] * v.z + data[3][3];
 
-		System.out.println("before persp div: " + x + " " + y + " " + z + " " + w);
+		// System.out.println("before persp div: " + x + " " + y + " " + z + " " + w);
 		// do perspective division:
 		x /= w;
 		y /= w;

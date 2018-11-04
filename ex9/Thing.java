@@ -6,9 +6,11 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
 
 public class Thing {
@@ -106,7 +108,7 @@ public class Thing {
 		pHandle = GL15.glGenBuffers();
 		cHandle = GL15.glGenBuffers();
 		
-		System.out.printf("Have handles %d, %d\n", pHandle, cHandle);
+		System.out.printf("%s has handles %d, %d\n", kind, pHandle, cHandle);
 		
 		pBuffer = makeBuffer();
 		cBuffer = makeBuffer();
@@ -164,17 +166,18 @@ public class Thing {
 		
 	}
 	
+	public Mat4 getTRS() {
+		return Mat4.trs(position, rotation, new Triple(1,1,1));
+	}
+	
 	public void draw() {
-		System.out.println("Thing.draw()");
 		// Activate model data
-		GL30.glBindVertexArray(vao);
-		System.out.println("after bind");
 		Util.error("after bind vao");
-		
 		
 		// Draw data
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numTris * 3);
 		Util.error("after draw arrays");
+		
 		
 	}
 }
