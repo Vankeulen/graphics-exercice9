@@ -201,11 +201,15 @@ public class ClassicalView extends Basic {
 	/** Handle moving to the next frame of input */
 	protected void nextFrame() {
 		// begin next frame.
+		
+		// Copy data for inputs from last frame
 		keyStates.next();
 		mouseButtons.next();
+		// Update lastMouse for delta tracking
 		lastMouseX = mouseX;
 		lastMouseY = mouseY;
 		
+		// Update timing information 
 		lastTime = time;
 		time = getTime() / 1000.0;
 		deltaTime = (time - lastTime);
@@ -267,20 +271,28 @@ public class ClassicalView extends Basic {
 					//  System.out.println( info );
 				}
 			} else {
+				// Not-jerry controls.
 				
+				// Update keystates with each key (would be best to do inside
+				//		GLFWKeyCallback/GLFWCursorPosCallback/GLFWMouseButtonCallback
+				// keyStates/mouseButtons tracks the state of keys/buttons (in bitfields)
+				//		for the current and the last frame, so we know if a key is held,
+				//		as well as if it was pressed/released when we want to know.
+				// mouseY/mouseY hold the current mouse position
+				//		we compare with lastMouseX/lastMouseY to check mouse movement.
 				if (info.kind == 'k' && info.action == GLFW_PRESS) {
 					keyStates.set(info.code, true);
 				} else if (info.kind == 'k' && info.action == GLFW_RELEASE) {
 					keyStates.set(info.code, false);
-				} else if (info.kind == 'm') {
-					mouseX = info.mouseX;
-					mouseY = info.mouseY;
-					
 				} else if (info.kind == 'b' && info.action == GLFW_PRESS) {
 					mouseButtons.set(info.code, true);
 				} else if (info.kind == 'b' && info.action == GLFW_RELEASE) {
 					mouseButtons.set(info.code, false);
+				} else if (info.kind == 'm') {
+					mouseX = info.mouseX;
+					mouseY = info.mouseY;
 				}
+					
 					
 			}
 		
@@ -293,14 +305,16 @@ public class ClassicalView extends Basic {
 	/** Called by Basic every frame */
 	protected void update() {
 		
+		// Check if escape was pressed and exit if it was.
+		// (I had to make window protected instead of private for this.
 		if (keyStates.checkPressed(GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(window, true);
 			return;
 		}
 		
+		// Call nice camera controls (can disable to control the car)
 		niceCameraControls();
 						
-		camera.move();
 		
 	}
 		
@@ -405,7 +419,7 @@ public class ClassicalView extends Basic {
 		// And apply movement relative to camera facing
 		camera.moveRelative(new Triple(dx*speed,dy*speed,dz*speed));
 		
-		dx = dy = dz = 0;
+		dx = dy = 0;
 		// Rotation applied every frame keys are held...
 		if (keyStates.check(GLFW_KEY_J)) { dx += 1; }
 		if (keyStates.check(GLFW_KEY_L)) { dx -= 1; }
@@ -415,6 +429,9 @@ public class ClassicalView extends Basic {
 		double angAmount = 65 * deltaTime;
 		camera.rotate(dx * angAmount);
 		camera.tilt(dy * angAmount);
+		
+		// Update the camera's matrixes based on movement applied.
+		camera.move();
 	}
 
 }// ClassicalView
