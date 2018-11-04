@@ -36,7 +36,7 @@ public class ClassicalView extends Basic {
 	private int frustumLoc, lookAtLoc;
 	private FloatBuffer frustumBuffer, lookAtBuffer;
 
-	private TriList tris;
+	// private TriList tris;
 	
 	private List<Thing> things;
 
@@ -48,15 +48,19 @@ public class ClassicalView extends Basic {
 		super(appTitle, pw, ph, (long) ((1.0 / fps) * 1000000000));
 		
 		// read position and color data for all the triangles from inputFile:
-		tris = new TriList();
+		// tris = new TriList();
 		try {
+			System.out.println("Loading input file " + inputFile);
 			Scanner input = new Scanner(new File(inputFile));
 			int numThings = input.nextInt();
+			System.out.println(numThings + " things");
 			input.nextLine();
 			
 			things = new ArrayList<>(numThings);
 			for (int i = 0; i < numThings; i++) {
-				things.add(new Thing(input));
+				Thing t = new Thing(input);
+				things.add(t);
+				System.out.println("Loaded thing " + t.kind + " at " + t.position + " with " + t.size() + " tris.");
 			}
 			
 			input.close();
@@ -70,7 +74,7 @@ public class ClassicalView extends Basic {
 				new Triple(0, -0, 5), 90, -30);
 
 	}
-
+	
 	protected void init() {
 		String vertexShaderCode
 				= "#version 330 core\n"
@@ -139,6 +143,11 @@ public class ClassicalView extends Basic {
 		// an incoming fragment overwrites the existing fragment if its depth
 		// is less
 		GL11.glDepthFunc(GL11.GL_LESS);
+		
+
+		for (Thing thing : things) {
+			thing.sendData();
+		}
 
 	}
 
@@ -201,14 +210,6 @@ public class ClassicalView extends Basic {
 
 	protected void update() {
 		
-		tris.reset();
-		
-		for (Thing thing : things) {
-			for (Triangle tri : thing.model) {
-				tris.add(tri);
-			}
-		}
-		
 		camera.move();
 
 	}
@@ -219,10 +220,10 @@ public class ClassicalView extends Basic {
 		System.out.println("camera is now " + camera);
 
 		// send triangle data to GPU
-		tris.sendData();
-
+		
+		// tris.sendData();
 		// send possibly new values of frustum and lookAt to GPU
-		// Util.showBuffer("frustum: ", frustumBuffer );
+		Util.showBuffer("frustum: ", frustumBuffer );
 		GL20.glUniformMatrix4fv(frustumLoc, true, frustumBuffer);
 		lookAtBuffer = camera.getLookAtBuffer();
 		// Util.showBuffer("lookAt: ", lookAtBuffer );
@@ -232,8 +233,8 @@ public class ClassicalView extends Basic {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
 		// activate vao
-		GL30.glBindVertexArray(tris.getVAO());
-		Util.error("after bind vao");
+		// GL30.glBindVertexArray(tris.getVAO());
+		// Util.error("after bind vao");
 
 		// seems that if glViewport is not called, Mac retina display
 		// is taken care of, but calling glViewport requires adjusting
@@ -243,16 +244,23 @@ public class ClassicalView extends Basic {
 				Util.retinaDisplay * getPixelHeight());
 
 		// draw the buffers
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
-		Util.error("after draw arrays");
+		for (Thing thing : things) {
+			thing.draw();
+		}
+		
+		//GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
+		// Util.error("after draw arrays");
 		
 		GL11.glViewport((int)(Util.retinaDisplay * getPixelWidth() * .5), 0,
 				(int)(Util.retinaDisplay * getPixelWidth() * .5),
 				Util.retinaDisplay * getPixelHeight());
 				
 		
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
-
+		// GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
+			
+		for (Thing thing : things) {
+			thing.draw();
+		}
 	}
 
 }// ClassicalView

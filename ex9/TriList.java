@@ -36,14 +36,6 @@ public class TriList {
 		}
 	}
 	
-	public void add(Triangle tri) {
-		list.add(tri);
-	}
-	
-	public void reset() {
-		list.clear();
-	}
-
 	public int size() {
 		return list.size();
 	}
