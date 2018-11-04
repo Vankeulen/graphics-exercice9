@@ -1,10 +1,11 @@
+package classic;
+
 /*  
    useful methods
    and constants
    that don't fit in any specific
    class
  */
-
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 

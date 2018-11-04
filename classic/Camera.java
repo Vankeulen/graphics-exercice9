@@ -1,9 +1,10 @@
+package classic;
+
 /*
    holds the viewing data and
    generates frustum and lookAt
    matrices
  */
-
 import java.util.Scanner;
 import java.nio.FloatBuffer;
 

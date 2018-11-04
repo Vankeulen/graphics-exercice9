@@ -1,3 +1,5 @@
+package classic;
+
 /*  
   draw many triangles from a data file
 
@@ -17,7 +19,6 @@
     the last parameter spot instead of the number of vertices
 
  */
-
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 

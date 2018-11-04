@@ -1,3 +1,5 @@
+package classic;
+
 /*  this class should be extended to provide
     an event-driven, graphical application
 
@@ -19,7 +21,6 @@
    update:  advance the simulation one full time step
 
  */
-
 //  LWJGL release = 3.0.0 build 90
 //  (earlier LWJGL3 download failed---Sys class seems to have disappeared,
 //   but the code wasn't using it, anyway;  a few other little changes)

@@ -1,8 +1,9 @@
+package classic;
+
 /* 
   hold the data for a
   bunch of triangles
  */
-
 import java.util.Scanner;
 import java.util.ArrayList;
 
@@ -19,6 +20,10 @@ public class TriList {
 	FloatBuffer positionBuffer, colorBuffer;
 
 	int vao;
+	
+	public TriList() {
+		list = new ArrayList<Triangle>();
+	}
 
 	public TriList(Scanner input) {
 
@@ -29,6 +34,14 @@ public class TriList {
 		for (int k = 0; k < numTris; k++) {
 			list.add(new Triangle(input));
 		}
+	}
+	
+	public void add(Triangle tri) {
+		list.add(tri);
+	}
+	
+	public void reset() {
+		list.clear();
 	}
 
 	public int size() {

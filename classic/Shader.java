@@ -1,8 +1,9 @@
+package classic;
+
 /*  
   an instance of this class provides interface to
   a GLSL shader
  */
-
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 

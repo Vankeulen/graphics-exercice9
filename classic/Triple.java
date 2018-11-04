@@ -1,9 +1,10 @@
+package classic;
+
 /*
   this class is immutable
   (as long as you don't directly change
    x, y, z)
  */
-
 import java.util.Scanner;
 import java.nio.FloatBuffer;
 

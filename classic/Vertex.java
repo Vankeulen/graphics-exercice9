@@ -1,3 +1,4 @@
+package classic;
 
 import java.util.Scanner;
 import java.nio.FloatBuffer;
@@ -6,6 +7,11 @@ public class Vertex {
 
 	private Triple position;
 	private Triple color;
+	
+	public Vertex(Triple pos, Triple col) {
+		position = pos;
+		color = col;
+	}
 
 	public Vertex(Scanner input) {
 		position = new Triple(input);

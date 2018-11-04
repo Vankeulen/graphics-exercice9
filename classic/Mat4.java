@@ -1,6 +1,7 @@
+package classic;
+
 /*  4 by 4 matrices
  */
-
 import java.nio.FloatBuffer;
 
 public class Mat4 {

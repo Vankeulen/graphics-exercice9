@@ -1,9 +1,10 @@
+package classic;
+
 /*  
    classical viewing of some
    triangles   
    with moving camera
  */
-
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 
@@ -18,11 +19,13 @@ import static org.lwjgl.glfw.GLFW.*;   // just for the key constants
 import java.util.Scanner;
 import java.io.*;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClassicalView extends Basic {
 
 	public static void main(String[] args) {
-		ClassicalView app = new ClassicalView("Classic Viewing of Several Triangles", 500, 500, 30, args[0]);
+		ClassicalView app = new ClassicalView("Classic Viewing of Several Triangles", 1000, 500, 30, "src/classic/carworld.txt");
 		app.start();
 	}// main
 
@@ -34,6 +37,8 @@ public class ClassicalView extends Basic {
 	private FloatBuffer frustumBuffer, lookAtBuffer;
 
 	private TriList tris;
+	
+	private List<Thing> things;
 
 	private Camera camera;
 
@@ -41,11 +46,19 @@ public class ClassicalView extends Basic {
 	// of drawing area, and frames per second
 	public ClassicalView(String appTitle, int pw, int ph, int fps, String inputFile) {
 		super(appTitle, pw, ph, (long) ((1.0 / fps) * 1000000000));
-
+		
 		// read position and color data for all the triangles from inputFile:
+		tris = new TriList();
 		try {
 			Scanner input = new Scanner(new File(inputFile));
-			tris = new TriList(input);
+			int numThings = input.nextInt();
+			input.nextLine();
+			
+			things = new ArrayList<>(numThings);
+			for (int i = 0; i < numThings; i++) {
+				things.add(new Thing(input));
+			}
+			
 			input.close();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -54,7 +67,7 @@ public class ClassicalView extends Basic {
 
 		// place camera somewhere at start
 		camera = new Camera(-.1, .1, -.1, .1, 0.5, 300,
-				new Triple(50, -50, 30), 90, -30);
+				new Triple(0, -0, 5), 90, -30);
 
 	}
 
@@ -187,7 +200,15 @@ public class ClassicalView extends Basic {
 	}
 
 	protected void update() {
-
+		
+		tris.reset();
+		
+		for (Thing thing : things) {
+			for (Triangle tri : thing.model) {
+				tris.add(tri);
+			}
+		}
+		
 		camera.move();
 
 	}
@@ -218,12 +239,19 @@ public class ClassicalView extends Basic {
 		// is taken care of, but calling glViewport requires adjusting
 		// by doubling number of pixels
 		GL11.glViewport(0, 0,
-				Util.retinaDisplay * getPixelWidth(),
+				(int)(Util.retinaDisplay * getPixelWidth() * .5) ,
 				Util.retinaDisplay * getPixelHeight());
 
 		// draw the buffers
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
 		Util.error("after draw arrays");
+		
+		GL11.glViewport((int)(Util.retinaDisplay * getPixelWidth() * .5), 0,
+				(int)(Util.retinaDisplay * getPixelWidth() * .5),
+				Util.retinaDisplay * getPixelHeight());
+				
+		
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, tris.size() * 3);
 
 	}
 
