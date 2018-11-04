@@ -78,7 +78,7 @@ public class ClassicalView extends Basic {
 			for (int i = 0; i < numThings; i++) {
 				Thing t = new Thing(input);
 				things.add(t);
-				System.out.println("Loaded thing " + t.kind + " at " + t.position + " with " + t.size() + " tris.");
+				System.out.println("Loaded thing " + t.kind + " at " + t.position + " with " + t.numTris() + " tris.");
 			}
 			
 			input.close();
