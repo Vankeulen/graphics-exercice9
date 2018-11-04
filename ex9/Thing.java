@@ -21,6 +21,8 @@ public class Thing {
 	
 	public Triple position;
 	public Triple rotation;
+	public Triple scale;
+	public Triple color;
 	
 	public double speed;
 	public double rotSpeed;
@@ -50,6 +52,8 @@ public class Thing {
 			
 			position = readV3(sc);
 			rotation = readV3(sc);
+			scale = readV3(sc);
+			color = readV3(sc);
 			
 			speed = sc.nextDouble();
 			rotSpeed = sc.nextDouble();
@@ -163,7 +167,11 @@ public class Thing {
 	}
 	
 	public Mat4 getTRS() {
-		return Mat4.trs(position, rotation, new Triple(1,1,1));
+		return Mat4.trs(position, rotation, scale);
+	}
+	
+	public Triple getColor() {
+		return color;
 	}
 	
 	public void draw() {

@@ -112,11 +112,11 @@ public class Mat4 {
 		Mat4 rz = rotate(0, 0, 1, rot.z);
 		Mat4 s = scale(sc.x, sc.y, sc.z);
 		
-		Mat4 trs = s;
+		Mat4 trs = t;
 		trs = trs.mult(rz);
 		trs = trs.mult(ry);
 		trs = trs.mult(rx);
-		trs = trs.mult(t);
+		trs = trs.mult(s);
 		
 		return trs;
 	}

@@ -136,6 +136,8 @@ public class Camera {
 
 	public void tilt(double amount) {
 		alt += amount;
+		if (alt < -89) { alt = -89; }
+		if (alt > 89) { alt = 89; }
 
 		update();
 	}

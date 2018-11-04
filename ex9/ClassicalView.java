@@ -25,7 +25,7 @@ import java.util.List;
 public class ClassicalView extends Basic {
 
 	public static void main(String[] args) {
-		ClassicalView app = new ClassicalView("Classic Viewing of Several Triangles", 1000, 500, 30, "src/ex9/carworld.txt");
+		ClassicalView app = new ClassicalView("kinda fancy car thing", 1000, 500, 60, "src/ex9/carworld.txt");
 		app.start();
 	}// main
 
@@ -48,10 +48,13 @@ public class ClassicalView extends Basic {
 	private int lastMouseX, lastMouseY;
 	
 	private List<Thing> things;
+	private double deltaTime;
+	private double lastTime;
+	private double time;
 
 	private Camera camera;
-	
 	private Camera topCamera;
+	
 
 	// construct basic application with given title, pixel width and height
 	// of drawing area, and frames per second
@@ -177,13 +180,20 @@ public class ClassicalView extends Basic {
 
 	}
 
-	protected void processInputs() {
+	protected void nextFrame() {
 		// begin next frame.
 		keyStates.next();
 		mouseButtons.next();
 		lastMouseX = mouseX;
 		lastMouseY = mouseY;
 		
+		lastTime = time;
+		time = getTime();
+		deltaTime = (time - lastTime) / 1000.0;
+	}
+		
+	protected void processInputs() {
+		nextFrame();
 		
 		// process all waiting input events
 		while (InputInfo.size() > 0) {
@@ -261,54 +271,17 @@ public class ClassicalView extends Basic {
 
 	protected void update() {
 		
-		final double angAmount = 5;
-		if (mouseButtons.check(GLFW_MOUSE_BUTTON_2)) {
-			if (mouseX != lastMouseX) {
-				camera.rotate(lastMouseX - mouseX);
-			}
-			if (mouseY != lastMouseY) {
-				camera.tilt(lastMouseY - mouseY);
-			}
-		}
-		
 		if (keyStates.checkPressed(GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(window, true);
+			return;
 		}
-		if (keyStates.check(GLFW_KEY_W)) {
-			camera.moveRelative(new Triple(0,1,0));
-		} 
-		if (keyStates.check(GLFW_KEY_S)) {
-			camera.moveRelative(new Triple(0,-1,0));
-		} 
-		if (keyStates.check(GLFW_KEY_A)) {
-			camera.moveRelative(new Triple(-1,0,0));
-		} 
-		if (keyStates.check(GLFW_KEY_D)) {
-			camera.moveRelative(new Triple(1,0,0));
-		} 
-		if (keyStates.check(GLFW_KEY_Q)) {
-			camera.moveRelative(new Triple(0,0,-1));
-		} 
-		if (keyStates.check(GLFW_KEY_E)) {
-			camera.moveRelative(new Triple(0,0,1));
-		} 
-		if (keyStates.check(GLFW_KEY_J)) {
-			camera.rotate(angAmount);
-		} 
-		if (keyStates.check(GLFW_KEY_L)) {
-			camera.rotate(-angAmount);
-		}
-		if (keyStates.check(GLFW_KEY_I)) {
-			camera.tilt(angAmount);
-		} 
-		if (keyStates.check(GLFW_KEY_K)) {
-			camera.tilt(-angAmount);
-		}
+		
+		niceCameraControls();
 						
 		camera.move();
 		
-		
 	}
+		
 
 	protected void display() {
 		
@@ -377,11 +350,49 @@ public class ClassicalView extends Basic {
 
 	private void draw(Thing thing) {
 		Mat4 trs = thing.getTRS();
+		Triple color = thing.getColor();
 		thing.sendData();
 		trs.sendData(modelViewBuffer);
 		GL20.glUniformMatrix4fv(modelViewLoc, true, modelViewBuffer);
-		
+		GL20.glUniform4f(blendColorLoc, (float)color.x, (float)color.y, (float)color.z, 1f);
 		thing.draw();
+	}
+	
+	private void niceCameraControls() {
+		
+		final double angAmount = 5;
+		if (mouseButtons.check(GLFW_MOUSE_BUTTON_2)) {
+			if (mouseX != lastMouseX) {
+				camera.rotate(lastMouseX - mouseX);
+			}
+			if (mouseY != lastMouseY) {
+				camera.tilt(lastMouseY - mouseY);
+			}
+		}
+		
+		
+		int dx=0,dy=0,dz=0;
+		if (keyStates.check(GLFW_KEY_W)) { dy += 1; } 
+		if (keyStates.check(GLFW_KEY_S)) { dy -= 1; } 
+		if (keyStates.check(GLFW_KEY_A)) { dx -= 1; } 
+		if (keyStates.check(GLFW_KEY_D)) { dx += 1; } 
+		if (keyStates.check(GLFW_KEY_Q)) { dz -= 1; }
+		if (keyStates.check(GLFW_KEY_E)) { dz += 1; }
+		double speed = 30 * deltaTime;
+		camera.moveRelative(new Triple(dx*speed,dy*speed,dz*speed));
+		
+		if (keyStates.check(GLFW_KEY_J)) {
+			camera.rotate(angAmount);
+		} 
+		if (keyStates.check(GLFW_KEY_L)) {
+			camera.rotate(-angAmount);
+		}
+		if (keyStates.check(GLFW_KEY_I)) {
+			camera.tilt(angAmount);
+		} 
+		if (keyStates.check(GLFW_KEY_K)) {
+			camera.tilt(-angAmount);
+		}
 	}
 
 }// ClassicalView
