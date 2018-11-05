@@ -213,6 +213,8 @@ public class ClassicalView extends Basic {
 		lastTime = time;
 		time = getTime() / 1000.0;
 		deltaTime = (time - lastTime);
+		Time.time = time;
+		Time.deltaTime = deltaTime;
 	}
 		
 	/** Called by Basic every frame before update */
@@ -310,6 +312,10 @@ public class ClassicalView extends Basic {
 		if (keyStates.checkPressed(GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose(window, true);
 			return;
+		}
+		
+		for (Thing thing : things) {
+			thing.update();
 		}
 		
 		// Call nice camera controls (can disable to control the car)

@@ -107,18 +107,10 @@ public class Mat4 {
 	
 	public static Mat4 trs(Triple tr, Triple rot, Triple sc) {
 		Mat4 t = translate(tr.x, tr.y, tr.z);
-		Mat4 rx = rotate(1, 0, 0, rot.x);
-		Mat4 ry = rotate(0, 1, 0, rot.y);
-		Mat4 rz = rotate(0, 0, 1, rot.z);
+		Mat4 r = rotate(rot.x, rot.y, rot.z);
 		Mat4 s = scale(sc.x, sc.y, sc.z);
 		
-		Mat4 trs = t;
-		trs = trs.mult(rz);
-		trs = trs.mult(ry);
-		trs = trs.mult(rx);
-		trs = trs.mult(s);
-		
-		return trs;
+		return t.mult(r).mult(s);
 	}
 	
 	public static Mat4 translate(double x, double y, double z) {
@@ -133,6 +125,34 @@ public class Mat4 {
 						0, y, 0, 0,
 						0, 0, z, 0,
 						0, 0, 0, 1);
+	}
+
+	public static final double DEG2RAD = Math.PI / 180;
+	public static Mat4 rotate(double x, double y, double z) {
+		double xs = Math.sin(x * DEG2RAD);
+		double xc = Math.cos(x * DEG2RAD);
+		double ys = Math.sin(y * DEG2RAD);
+		double yc = Math.cos(y * DEG2RAD);
+		double zs = Math.sin(z * DEG2RAD);
+		double zc = Math.cos(z * DEG2RAD);
+		
+		Mat4 rx = new Mat4(1, 0, 0, 0,
+							0, xc, -xs, 0,
+							0, xs, xc, 0,
+							0, 0, 0, 1);
+		
+		Mat4 ry = new Mat4(yc, 0, ys, 0,
+							0, 1, 0, 0,
+							-ys, 0, yc, 0,
+							0, 0, 0, 1);
+		
+		Mat4 rz = new Mat4(zc, -zs, 0, 0, 
+							zs, zc, 0, 0,
+							0, 0, 1, 0,
+							0, 0, 0, 1);
+		
+		
+		return rx.mult(ry).mult(rz);
 	}
 
 	// produce the general rotation matrix for

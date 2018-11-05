@@ -109,12 +109,19 @@ public class Thing {
 	private void init() {
 		position = new Triple(0,0,0);
 		rotation = new Triple(0,0,0);
+		scale = new Triple(1,1,1);
+		color = new Triple(1,1,1);
 		speed = 0;
 		rotSpeed = 0;
 	}
 	
 	public void update() {
 		
+		rotation = new Triple(
+				rotation.x,
+				rotation.y,
+				rotation.z + rotSpeed * Time.deltaTime
+		);
 		
 	}
 	

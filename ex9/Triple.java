@@ -10,11 +10,17 @@ import java.nio.FloatBuffer;
 
 public class Triple {
 
+	public static final Triple ONE = new Triple(1,1,1);
+	public static final Triple ZERO = new Triple(0,0,0);
+	
 	public final static Triple xAxis = new Triple(1, 0, 0);
 	public final static Triple yAxis = new Triple(0, 1, 0);
 	public final static Triple zAxis = new Triple(0, 0, 1);
-
-	// public, but absolutely do not change them directly!
+	
+	public static final Triple FORWARD = yAxis;
+	public static final Triple RIGHT = xAxis;
+	public static final Triple UP = zAxis;
+	
 	public final double x, y, z;
 
 	public Triple(double xIn, double yIn, double zIn) {
