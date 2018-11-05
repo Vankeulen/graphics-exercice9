@@ -167,13 +167,13 @@ public class Mat4 {
 		double s = Math.sin(Math.toRadians(angle));
 
 		// for efficency and convenience:
-		double onec = 1 - c,
+		double onec = 1.0 - c,
 				xy = x * y, xz = x * z, yz = y * z,
 				sx = s * x, sy = s * y, sz = s * z;
 
 		return new Mat4(
 				x * x * onec + c, xy * onec - sz, xz * onec + sy, 0,
-				xy * onec, y * y * onec + c, yz * onec - sx, 0,
+				xy * onec + sz, y * y * onec + c, yz * onec - sx, 0,
 				xz * onec - sy, yz * onec + sx, z * z * onec + c, 0,
 				0, 0, 0, 1);
 
