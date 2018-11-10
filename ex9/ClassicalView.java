@@ -183,7 +183,7 @@ public class ClassicalView extends Basic {
 		GL11.glClearColor(.08f, .4f, .65f, 1);
 		// Set the default depth value to use when clearing
 		GL11.glClearDepth(2.0f);
-
+		
 		// Turn on depth testing
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		// an incoming fragment overwrites the existing fragment if its depth
@@ -329,6 +329,7 @@ public class ClassicalView extends Basic {
 		// Clear screen (backbuffer)
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		
+		
 		// Pipes data for View/Projection matrix for camera to shader
 		activate(camera);
 		
@@ -397,6 +398,7 @@ public class ClassicalView extends Basic {
 		thing.draw();
 	}
 	
+	private int frames_held = 0;
 	/** Nicer, more intuitive camera controls */
 	private void niceCameraControls() {
 		
@@ -422,6 +424,12 @@ public class ClassicalView extends Basic {
 		
 		// Move at 30 units/second
 		double speed = 30 * deltaTime;
+		if (keyStates.check(GLFW_KEY_LEFT_SHIFT)) {
+			speed += frames_held / 30;
+			frames_held++;
+		} else {
+			frames_held = 0;
+		}
 		// And apply movement relative to camera facing
 		camera.moveRelative(new Triple(dx*speed,dy*speed,dz*speed));
 		
