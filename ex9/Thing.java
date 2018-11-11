@@ -5,6 +5,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -15,7 +16,8 @@ import org.lwjgl.opengl.GL30;
 
 /** Simple 'Entity' like class. */
 public class Thing {
-	
+	public static double worldSize = 100;
+
 	/** Kind of thing this thing is  */
 	public String kind;
 	/** Vert positions in the model to show */
@@ -150,7 +152,25 @@ public class Thing {
 		);
 
 		moveRelative(new Triple(0, speed * Time.deltaTime, 0));
-		
+
+		// Match "Car" exactly
+		if (kind.equals("Car")) {
+			carLogic();
+		}
+		// Contains "Car" ( PlayerCar and Car )
+		if (kind.contains("Car")) {
+			clampToWorld();
+		}
+	}
+
+	// really dumb way of keeping things in the world, but works
+	public void clampToWorld() {
+		double x = position.x, y = position.y, z = position.z;
+		if (x > worldSize) { x = worldSize; }
+		if (x < -worldSize) { x = -worldSize; }
+		if (y > worldSize) { y = worldSize; }
+		if (y < -worldSize) { y = -worldSize; }
+		position = new Triple(x, y, z);
 	}
 	
 	/** Gets the number of triangles in the model. */
@@ -263,5 +283,51 @@ public class Thing {
 		GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
 		Util.error("after do color vertex attrib pointer");
 	}
-		
+
+	//////////////////////////////////////////////
+	// car logic
+	static Random rand = new Random();
+	double turnTimeout = 0;
+	double gasTimeout = 0;
+	// Function called every frame to update NPCs (Non-Player-Cars)
+	public void carLogic() {
+		// Step each timer towards zero
+		turnTimeout -= Time.deltaTime;
+		gasTimeout -= Time.deltaTime;
+
+		// Did turn time finish?
+		if (turnTimeout <= 0) {
+
+			// Are we turning?
+			if (rotSpeed != 0) {
+				// if so, stop
+				rotSpeed = 0;
+			} else {
+				// otherwise, pick a new turning rate
+				// Turn range between (-120, +120)
+				rotSpeed = -120.0 + rand.nextDouble() * 240.0;
+			}
+
+			// reset timer so it can fire again later
+			turnTimeout = 2 + rand.nextDouble() * 3;
+		}
+
+		// Did gas time finish?
+		if (gasTimeout <= 0) {
+			// are we moving?
+			if (speed != 0) {
+				// If so stop
+				speed = 0;
+			} else {
+				// otherwise choose a random speed
+				// Range (10, 40)
+				speed = 10 + rand.nextDouble() * 30;
+			}
+
+			// Reset timer so it can fire again later
+			gasTimeout = 1 + rand.nextDouble() * 2;
+		}
+
+	}
+
 }

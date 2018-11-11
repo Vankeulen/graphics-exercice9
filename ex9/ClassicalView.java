@@ -26,7 +26,7 @@ public class ClassicalView extends Basic {
 	}// main
 
 	// toggle to preserve Jerry's controls.
-	public static final boolean JERRY_CONTROLS = true;
+	public static final boolean JERRY_CONTROLS = false;
 	
 	// instance variables 
 	private Shader v1, f1;
