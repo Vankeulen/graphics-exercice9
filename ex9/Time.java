@@ -10,8 +10,11 @@ package ex9;
  * @author kog
  */
 public class Time {
-	
+
+	/** Time since application startup should be reported here */
 	public static double time;
+
+	/** Time taken for the previous frame should be reported here */
 	public static double deltaTime;
 	
 }

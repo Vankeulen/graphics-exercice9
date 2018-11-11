@@ -23,11 +23,12 @@ public class Thing {
 	/** Vert colors in the model to show */
 	public List<Triple> modelColors;
 	
-	/** Entity position */
+	/** Entity position stores position of entity in 3d space.*/
 	public Triple position;
-	/** Entity rotation */
+	/** Entity rotation, stores angle in degrees of rotation on
+	 * each x, y, and z axis */
 	public Triple rotation;
-	/** Entity Scale */
+	/** Entity Scale stores size of entity, along x,y,z axis*/
 	public Triple scale;
 	/** Entity Color */
 	public Triple color;
@@ -104,7 +105,32 @@ public class Thing {
 		double z = sc.nextDouble();
 		return new Triple(x, y, z);
 	}
-	
+
+	public void moveRelative(Triple movement) {
+		double alpha = Math.toRadians(rotation.z);
+		double beta = Math.toRadians(rotation.x);
+		double n = 1;
+		Triple e = position;
+		Triple c = new Triple(e.x + Math.cos(beta) * n * Math.cos(alpha),
+				e.y + Math.cos(beta) * n * Math.sin(alpha),
+				e.z + n * Math.sin(beta)
+		);
+
+		// x = right/left
+		// y = forward/backward
+		// z = up/down
+		Mat4 orientation = Mat4.lookAtOrientation(e, c, Triple.zAxis);
+		Triple forward = orientation.forward().normalize().scale(movement.y);
+		Triple right = orientation.right().normalize().scale(movement.x);
+		Triple up  = orientation.up().normalize().scale(movement.z);
+
+		position = new Triple(
+				position.x + forward.x + right.x + up.x,
+				position.y + forward.y + right.y + up.y,
+				position.z + forward.z + right.z + up.z
+		);
+
+	}
 	
 	private void init() {
 		position = new Triple(0,0,0);
@@ -122,6 +148,8 @@ public class Thing {
 				rotation.y,
 				rotation.z + rotSpeed * Time.deltaTime
 		);
+
+		moveRelative(new Triple(0, speed * Time.deltaTime, 0));
 		
 	}
 	

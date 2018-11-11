@@ -10,12 +10,13 @@ import java.nio.FloatBuffer;
 
 public class Camera {
 
+	//breaks if altitude not clamped within this range
 	public static final double MAX_PITCH =  89.999;
 	public static final double MIN_PITCH = -89.999;
 	
 	// human modeling of viewing setup
-	private Triple e;
-	private double azi, alt;
+	public Triple e;
+	public double azi, alt;
 	
 
 	// frustum data
@@ -57,9 +58,8 @@ public class Camera {
 		);
 		
 		// x = right/left
-		// y = forward/backward????
-		// z = up/down??????
-		
+		// y = forward/backward
+		// z = up/down
 		orientation = Mat4.lookAtOrientation(e, c, Triple.zAxis);
 		Triple forward = orientation.forward().normalize().scale(movement.y);
 		Triple right = orientation.right().normalize().scale(movement.x);

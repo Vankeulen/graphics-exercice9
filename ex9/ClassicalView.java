@@ -5,12 +5,9 @@ package ex9;
    triangles   
    with moving camera
  */
-import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
 // import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;   // just for the key constants
@@ -18,7 +15,6 @@ import static org.lwjgl.glfw.GLFW.*;   // just for the key constants
 
 import java.util.Scanner;
 import java.io.*;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +26,7 @@ public class ClassicalView extends Basic {
 	}// main
 
 	// toggle to preserve Jerry's controls.
-	public static final boolean JERRY_CONTROLS = false;
+	public static final boolean JERRY_CONTROLS = true;
 	
 	// instance variables 
 	private Shader v1, f1;
@@ -50,6 +46,7 @@ public class ClassicalView extends Basic {
 	
 	/** Entity list */
 	private List<Thing> things;
+
 	/** Time (seconds) between last frame and new frame */
 	private double deltaTime;
 	/** Last Time (seconds) */
@@ -57,6 +54,10 @@ public class ClassicalView extends Basic {
 	/** Current Time (seconds) */
 	private double time;
 
+	/** offset for camera following player car */
+	private Triple cameraPositionOffset = new Triple(0, -15, 3);
+	/** offset for camera rotation following player car*/
+	private Triple cameraRotationOffset = new Triple(-11, 0, 0);
 	private Camera camera;
 	private Camera topCamera;
 	
@@ -88,7 +89,7 @@ public class ClassicalView extends Basic {
 		}
 
 		// Primary camera
-		double w = .5;
+		double w = .55;
 		camera = new Camera(-w, w, -w, w, 0.5, 1300,
 				new Triple(0, 0, 5), 90, -30);
 		
@@ -213,6 +214,11 @@ public class ClassicalView extends Basic {
 		lastTime = time;
 		time = getTime() / 1000.0;
 		deltaTime = (time - lastTime);
+		// Capped so too much time never elapses in one frame
+		if (deltaTime > .1) {
+			deltaTime = .1;
+		}
+
 		Time.time = time;
 		Time.deltaTime = deltaTime;
 	}
@@ -227,46 +233,46 @@ public class ClassicalView extends Basic {
 			
 			// Jerry's controls.
 			if (JERRY_CONTROLS) {
-				if (info.kind == 'k' && (info.action == GLFW_PRESS
-						|| info.action == GLFW_REPEAT)) {
 
-					// store info values in more convenient variables
-					int code = info.code;
-					int mods = info.mods;
 
-					final double amount = 1;  // amount to move
-					final double angAmount = 5;
+				// store info values in more convenient variables
+				int code = info.code;
 
-					// move the eye point of the camera
-					if (code == GLFW_KEY_X && mods == 0) {// x:  move left
-						camera.shift(-amount, 0, 0);
-					} else if (code == GLFW_KEY_X && mods == 1) {// X:  move right
-						camera.shift(amount, 0, 0);
-					} else if (code == GLFW_KEY_Y && mods == 0) {// y:  move smaller in y direction
-						camera.shift(0, -amount, 0);
-					} else if (code == GLFW_KEY_Y && mods == 1) {// Y:  move bigger in y direction
-						camera.shift(0, amount, 0);
-					} else if (code == GLFW_KEY_Z && mods == 0) {// z:  move smaller in z direction
-						camera.shift(0, 0, -amount);
-					} else if (code == GLFW_KEY_Z && mods == 1) {// Z:  move bigger in Z direction
-						camera.shift(0, 0, amount);
-					} // change angles
-					else if (code == GLFW_KEY_R && mods == 0) {// r:  rotate clockwise
-						camera.rotate(-angAmount);
-					} else if (code == GLFW_KEY_R && mods == 1) {// R: rotate counterclockwise
-						camera.rotate(angAmount);
-					} else if (code == GLFW_KEY_T && mods == 0) {// t:  tilt downward
-						camera.tilt(-angAmount);
-					} else if (code == GLFW_KEY_T && mods == 1) {// T: tilt upward
-						camera.tilt(angAmount);
-					} else if (code == GLFW_KEY_G && mods == 0) {// g to go
-						camera.go();
-					} else if (code == GLFW_KEY_S && mods == 0) {// s to stop
-						camera.stop();
-					} else {
-						// ignore bad keys
+				final double amount = 1;  // amount to move
+				final double angAmount = 5;
+				Thing player = findThing("PlayerCar");
+
+				if (info.kind == 'k' &&
+						(info.action == GLFW_PRESS || info.action == GLFW_REPEAT)) {
+
+					if (player != null) {
+						if (code == GLFW_KEY_L) {
+							player.rotation = new Triple(
+									player.rotation.x, player.rotation.y,
+									player.rotation.z + 5
+							);
+						} else if (code == GLFW_KEY_R) {
+							player.rotation = new Triple(
+									player.rotation.x, player.rotation.y,
+									player.rotation.z - 5
+							);
+						} else if (code == GLFW_KEY_G) {
+							player.speed = 40;
+						} else if (code == GLFW_KEY_S) {
+							player.speed = 0;
+						} else if (code == GLFW_KEY_D) {
+							cameraRotationOffset = new Triple(
+									clamp(cameraRotationOffset.x - 5, -89.99, 89.99), 0, 0
+							);
+						} else if (code == GLFW_KEY_U) {
+							cameraRotationOffset = new Triple(
+									clamp(cameraRotationOffset.x + 5, -89.99, 89.99), 0, 0
+							);
+						} else {
+							// ignore bad keys
+						}
 					}
-				}// input event is a key
+				}// input event is a key press
 				else if (info.kind == 'm') {// mouse moved
 					//  System.out.println( info );
 				} else if (info.kind == 'b') {// button action
@@ -319,8 +325,25 @@ public class ClassicalView extends Basic {
 		}
 		
 		// Call nice camera controls (can disable to control the car)
-		niceCameraControls();
-						
+		Thing player = findThing("PlayerCar");
+		if (player != null) {
+			controlPlayer(player);
+
+			camera.e = player.position;
+			camera.azi = player.rotation.z + cameraRotationOffset.z;
+			camera.alt = player.rotation.x + cameraRotationOffset.x;
+
+			camera.moveRelative(cameraPositionOffset);
+
+			// Update camera matricies
+			camera.move();
+
+		} else {
+			niceCameraControls();
+		}
+
+
+
 		
 	}
 		
@@ -397,11 +420,34 @@ public class ClassicalView extends Basic {
 		
 		thing.draw();
 	}
-	
+
+	private void controlPlayer(Thing player) {
+
+		if (!JERRY_CONTROLS) {
+			if (keyStates.check(GLFW_KEY_A)) {
+				player.rotSpeed = 120;
+			} else if (keyStates.check(GLFW_KEY_D)) {
+				player.rotSpeed = -120;
+			} else {
+				player.rotSpeed = 0;
+			}
+
+			if (keyStates.check(GLFW_KEY_W)) {
+				player.speed = 65;
+			} else if (keyStates.check(GLFW_KEY_S)) {
+				player.speed = -65;
+			} else {
+				player.speed = 0;
+			}
+		}
+
+	}
+
+
 	private int frames_held = 0;
 	/** Nicer, more intuitive camera controls */
 	private void niceCameraControls() {
-		
+
 		// Mousemove while rightclick held
 		if (mouseButtons.check(GLFW_MOUSE_BUTTON_2)) {
 			if (mouseX != lastMouseX) {
@@ -411,17 +457,17 @@ public class ClassicalView extends Basic {
 				camera.tilt(lastMouseY - mouseY);
 			}
 		}
-		
+
 		// Map W/S to forward/back, A/D to left/right, Q/E to down/up
 		// Movement applied every frame keys are held...
 		int dx=0,dy=0,dz=0;
-		if (keyStates.check(GLFW_KEY_W)) { dy += 1; } 
-		if (keyStates.check(GLFW_KEY_S)) { dy -= 1; } 
-		if (keyStates.check(GLFW_KEY_A)) { dx -= 1; } 
-		if (keyStates.check(GLFW_KEY_D)) { dx += 1; } 
+		if (keyStates.check(GLFW_KEY_W)) { dy += 1; }
+		if (keyStates.check(GLFW_KEY_S)) { dy -= 1; }
+		if (keyStates.check(GLFW_KEY_A)) { dx -= 1; }
+		if (keyStates.check(GLFW_KEY_D)) { dx += 1; }
 		if (keyStates.check(GLFW_KEY_Q)) { dz -= 1; }
 		if (keyStates.check(GLFW_KEY_E)) { dz += 1; }
-		
+
 		// Move at 30 units/second
 		double speed = 30 * deltaTime;
 		if (keyStates.check(GLFW_KEY_LEFT_SHIFT)) {
@@ -432,7 +478,7 @@ public class ClassicalView extends Basic {
 		}
 		// And apply movement relative to camera facing
 		camera.moveRelative(new Triple(dx*speed,dy*speed,dz*speed));
-		
+
 		dx = dy = 0;
 		// Rotation applied every frame keys are held...
 		if (keyStates.check(GLFW_KEY_J)) { dx += 1; }
@@ -443,9 +489,26 @@ public class ClassicalView extends Basic {
 		double angAmount = 65 * deltaTime;
 		camera.rotate(dx * angAmount);
 		camera.tilt(dy * angAmount);
-		
+
 		// Update the camera's matrixes based on movement applied.
 		camera.move();
 	}
+
+	private Thing findThing(String name) {
+		for (Thing t : things) {
+			if (t.kind.equals(name)) {
+				return t;
+			}
+		}
+		return null;
+	}
+
+	private static double clamp(double val, double min, double max) {
+		if (val < min) { return min; }
+		if (val > max) { return max; }
+		return val;
+	}
+
+
 
 }// ClassicalView
